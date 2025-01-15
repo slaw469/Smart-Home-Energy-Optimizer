@@ -1,0 +1,29 @@
+% Appliance states: appliance(Name, State, EnergyUsage, Essential, Room).
+appliance(tv, on, 150, no, living_room).
+appliance(fridge, on, 200, yes, kitchen).
+appliance(light, on, 50, no, bedroom).
+appliance(oven, off, 1000, no, kitchen).
+appliance(heater, off, 1500, no, bathroom).
+appliance(washing_machine, off, 500, no, laundry_room).
+appliance(computer, on, 300, no, office).
+
+% Weather information: weather(Season, Temperature, Humidity).
+weather(summer, 90, 70).
+
+% User preferences: prefers_temperature(Temp), prefers_humidity(Humidity).
+prefers_temperature(72).
+prefers_humidity(50).
+
+% Occupancy status: home_occupied(Status).
+home_occupied(no).
+
+% Time of day: time_of_day(Hour).
+time_of_day(14).
+
+% Energy pricing: energy_price(Period, PricePerKWh).
+% Periods: peak, off_peak
+energy_price(peak, 0.20).
+energy_price(off_peak, 0.10).
+
+% Peak hours: peak_hours(StartHour, EndHour).
+peak_hours(17, 21).
