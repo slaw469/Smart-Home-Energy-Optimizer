@@ -20,12 +20,9 @@
     suggest_turn_off_lights/1
 ]).
 
-:- use_module(library(lists)).
+:- use_module(library(lists)).  % Ensure the lists library is included.
 
-% ---------------------------------------------------------------------------
-% APPLIANCE DEFINITIONS
-% ---------------------------------------------------------------------------
-% appliance(Name, State, EnergyUsage, Essential, Room).
+% Appliance states: appliance(Name, State, EnergyUsage, Essential, Room).
 :- dynamic appliance/5.
 
 appliance(tv, off, 150, no, living_room).
@@ -36,32 +33,28 @@ appliance(heater, off, 1500, no, bathroom).
 appliance(washing_machine, off, 500, no, laundry_room).
 appliance(computer, on, 300, no, office).
 
-% ---------------------------------------------------------------------------
-% WEATHER AND USER PREFERENCES
-% ---------------------------------------------------------------------------
+% Weather information: weather(Season, Temperature, Humidity).
 :- dynamic weather/3.
 
 weather(summer, 90, 70).
 
+% User preferences
 :- dynamic prefers_temperature/1, prefers_humidity/1.
 
 prefers_temperature(72).
 prefers_humidity(50).
 
-% ---------------------------------------------------------------------------
-% HOME OCCUPANCY AND TIME
-% ---------------------------------------------------------------------------
+% Home occupancy
 :- dynamic home_occupied/1.
 
 home_occupied(no).
 
+% Time of day
 :- dynamic time_of_day/1.
 
 time_of_day(14).
 
-% ---------------------------------------------------------------------------
-% ENERGY PRICING
-% ---------------------------------------------------------------------------
+% Energy pricing
 :- dynamic energy_price/2.
 
 energy_price(peak, 0.20).
@@ -72,157 +65,75 @@ energy_price(off_peak, 0.10).
 
 peak_hours(17, 21).
 
-% ---------------------------------------------------------------------------
-% DETERMINE CURRENT ENERGY PRICE
-% ---------------------------------------------------------------------------
+% Determine current energy price
 current_energy_price(Price) :-
     time_of_day(Hour),
     peak_hours(Start, End),
-    ( Hour >= Start, Hour < End ->
+    (Hour >= Start, Hour < End ->
         energy_price(peak, Price)
-    ;   energy_price(off_peak, Price)
-    ).
+    ;
+        energy_price(off_peak, Price)).
 
-% ---------------------------------------------------------------------------
-% HVAC OPTIMIZATION
-% ---------------------------------------------------------------------------
+% Optimize HVAC usage
 optimize_hvac(Action) :-
-    weather(summer, Temp, _Humidity),
+    weather(summer, Temp, _),
     prefers_temperature(PrefTemp),
-    ( Temp > PrefTemp + 5 ->
+    (Temp > PrefTemp + 5 ->
         Action = 'Turn on air conditioning'
-    ; Temp < PrefTemp - 5 ->
+    ;
+     Temp < PrefTemp - 5 ->
         Action = 'Turn on heating'
     ;
-        Action = 'HVAC off'
-    ).
+        Action = 'HVAC off').
 
-% ---------------------------------------------------------------------------
-% RECOMMEND TURNING OFF APPLIANCES WHEN UNOCCUPIED
-% ---------------------------------------------------------------------------
-% should_turn_off(Appliance) is true if Appliance is ON, 
-% non-essential, and home is unoccupied.
+% Recommend appliances to turn off when the home is unoccupied
 should_turn_off(Appliance) :-
-    appliance(Appliance, on, _Energy, no, _Room),
+    appliance(Appliance, on, _, no, _),
     home_occupied(no).
 
-% ---------------------------------------------------------------------------
-% TOTAL ENERGY CONSUMPTION
-% ---------------------------------------------------------------------------
+% Total energy consumption
 total_energy_consumption(Total) :-
-    findall(Energy, appliance(_Name, on, Energy, _Essential, _Room), Energies),
-    sumlist(Energies, Total).
+    findall(Energy, appliance(_, on, Energy, _, _), Energies),
+    sumlist(Energies, Total).  % Use `sumlist` instead of `sum_list`.
 
-% ---------------------------------------------------------------------------
-% ESTIMATE ENERGY COST
-% ---------------------------------------------------------------------------
+% Estimate energy cost
 estimated_energy_cost(Cost) :-
     total_energy_consumption(TotalKWh),
     current_energy_price(PricePerKWh),
     Cost is TotalKWh * PricePerKWh.
 
-% ---------------------------------------------------------------------------
-% SUGGEST TURNING OFF LIGHTS IN UNOCCUPIED ROOMS
-% (One simple example: if the house is unoccupied, 
-%  we might suggest turning off lights, or you can refine this further.)
-% ---------------------------------------------------------------------------
-suggest_turn_off_lights(Room) :-
-    appliance(light, on, _Energy, _Essential, Room),
-    home_occupied(no).
-
-% ---------------------------------------------------------------------------
-% SCHEDULE HIGH-ENERGY APPLIANCES FOR OFF-PEAK USAGE
-% ---------------------------------------------------------------------------
-schedule_appliance_use(Appliance, 'off-peak hours') :-
-    appliance(Appliance, off, Energy, _Essential, _Room),
-    Energy > 200,  % Only schedule high-energy appliances
-    current_energy_price(Price),
-    % If we see the price is peak or high, wait for off-peak
-    Price >= 0.20.
-
-% ---------------------------------------------------------------------------
-% RECOMMEND APPLIANCES TO TURN OFF DURING PEAK HOURS
-% ---------------------------------------------------------------------------
-should_turn_off_during_peak(Appliance) :-
-    appliance(Appliance, on, _Energy, no, _Room),
-    current_energy_price(Price),
-    Price > 0.15.  % Example threshold
-
-% ---------------------------------------------------------------------------
-% RECOMMEND ESSENTIAL APPLIANCES REMAIN ON
-% ---------------------------------------------------------------------------
-should_remain_on(Appliance) :-
-    appliance(Appliance, _State, _Energy, yes, _Room).
-
-% ---------------------------------------------------------------------------
-% SUGGEST ENERGY-SAVING ACTIONS (MAIN ENTRY POINT FOR /energy_saving)
-% ---------------------------------------------------------------------------
-suggest_energy_saving(FullRecommendation) :-
+% Suggest energy-saving actions
+suggest_energy_saving(Action) :-
     total_energy_consumption(Total),
-    findall(A, should_turn_off(A), UnoccupiedOff),
-    findall(A, should_turn_off_during_peak(A), PeakOff),
-    findall(Room, suggest_turn_off_lights(Room), LightsOffRooms),
-    findall(Appliance, schedule_appliance_use(Appliance, 'off-peak hours'), Scheduled),
-    
-    % If total usage is above 2000, highlight that we’re consuming a lot
-    (   Total > 2000
-    ->  OverConsumptionMsg = 'Your total energy consumption is high. Consider turning off non-essential appliances.'
-    ;   OverConsumptionMsg = 'Your energy consumption is within an acceptable range.'
-    ),
+    (Total > 2000 ->
+        Action = 'Consider turning off non-essential appliances to reduce consumption'
+    ;
+        Action = 'Energy consumption is within optimal range').
 
-    % Build partial advice strings
-    build_unoccupied_msg(UnoccupiedOff, UnoccupiedMsg),
-    build_peak_off_msg(PeakOff, PeakOffMsg),
-    build_lights_off_msg(LightsOffRooms, LightsOffMsg),
-    build_scheduling_msg(Scheduled, SchedulingMsg),
+% Suggest turning off lights in unoccupied rooms
+suggest_turn_off_lights(Room) :-
+    appliance(light, on, _, _, Room),
+    home_occupied(no).
+% User input for electricity calculation
+:- dynamic user_input/2.
 
-    % Combine them all into one single recommendation text
-    atomic_list_concat(
-      [
-        OverConsumptionMsg,
-        UnoccupiedMsg,
-        PeakOffMsg,
-        LightsOffMsg,
-        SchedulingMsg
-      ],
-      ' ',
-      FullRecommendation
-    ).
+% Reset user inputs (optional for repeated use)
+reset_user_inputs :-
+    retractall(user_input(_, _)).
 
-% Helper to advise turning off non-essential appliances if unoccupied
-build_unoccupied_msg([], '').
-build_unoccupied_msg(List, Msg) :-
-    List \= [],
-    format(atom(Msg),
-      'Since the home is unoccupied, you could turn off these non-essential appliances: ~w.',
-      [List]).
+% Store user input for a specific appliance or factor
+store_user_input(Name, Value) :-
+    retractall(user_input(Name, _)), % Remove existing input for this appliance
+    assertz(user_input(Name, Value)).
 
-% Helper to advise turning off during peak
-build_peak_off_msg([], '').
-build_peak_off_msg(List, Msg) :-
-    List \= [],
-    format(atom(Msg),
-      'It is currently peak hours, consider turning off these appliances: ~w.',
-      [List]).
+% Calculate total electricity usage based on user inputs
+calculate_usage(TotalKWh) :-
+    findall(Value, user_input(_, Value), Values),
+    sumlist(Values, TotalKWh).
 
-% Helper to advise turning off lights when no one is home
-build_lights_off_msg([], '').
-build_lights_off_msg(List, Msg) :-
-    List \= [],
-    format(atom(Msg),
-      'Turn off lights in these rooms: ~w.',
-      [List]).
-
-% Helper to advise scheduling high-energy appliances for off-peak
-build_scheduling_msg([], '').
-build_scheduling_msg(List, Msg) :-
-    List \= [],
-    format(atom(Msg),
-      'Schedule these high-energy appliances to run during off-peak hours: ~w.',
-      [List]).
-% ---------------------------------------------------------------------------
-% ROOM APPLIANCE USAGE
-% ---------------------------------------------------------------------------
-room_appliance_usage(Room, TotalUsage) :-
-    findall(Energy, appliance(_, on, Energy, _, Room), Energies),
-    sumlist(Energies, TotalUsage).
+% Suggest kWh savings based on user input
+suggest_kwh_saving(SavingKWh) :-
+    calculate_usage(TotalKWh),
+    (TotalKWh > 200 ->
+        SavingKWh is TotalKWh * 0.2; % Assume 20% saving potential
+        SavingKWh is 0).
