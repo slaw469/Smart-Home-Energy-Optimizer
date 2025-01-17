@@ -5,38 +5,106 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Smart Home Control Panel</title>
   <style>
+    /* General body styling */
     body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #121212;
+      color: #ffffff;
+      margin: 0;
+      padding: 20px;
     }
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      margin-top: 20px;
+
+    h1, h3, p {
+      color: #e0e0e0;
+      margin-bottom: 15px;
     }
-    th, td {
-      border: 1px solid #ddd;
-      padding: 8px;
-      text-align: left;
+
+    h1 {
+      font-size: 2.5rem;
     }
-    th {
-      background-color: #f4f4f4;
-    }
-    h1, h3 {
-      color: #333;
-    }
-    .recommendations {
+
+    h3 {
+      font-size: 1.5rem;
       margin-top: 30px;
     }
+
+    p {
+      font-size: 1rem;
+      line-height: 1.5;
+    }
+
+    /* Table styling */
+    table {
+      width: 100%;
+      margin-top: 20px;
+      border-collapse: collapse;
+      background-color: #1e1e1e;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.5);
+    }
+
+    th, td {
+      padding: 12px 15px;
+      text-align: left;
+    }
+
+    th {
+      background-color: #2c2c2c;
+      color: #ffffff;
+      font-weight: bold;
+      border-bottom: 2px solid #444;
+    }
+
+    td {
+      color: #cccccc;
+      border-bottom: 1px solid #333;
+    }
+
+    tr:hover td {
+      background-color: #252525;
+    }
+
+    /* Buttons */
     .button {
-      margin: 5px 0;
+      display: inline-block;
+      padding: 10px 20px;
+      margin-top: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #ffffff;
+      background-color: #3a3f47;
+      border: 2px solid transparent;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .button:hover {
+      background-color: #5c636e;
+      border-color: #777;
+    }
+
+    /* Recommendation result paragraphs */
+    #hvac-result, #energy-saving-result {
+      margin-top: 10px;
+      color: #a0a0a0;
+      font-size: 1rem;
+      font-style: italic;
+    }
+
+    /* Footer */
+    footer {
+      margin-top: 40px;
+      color: #808080;
+      font-size: 0.9rem;
+      text-align: center;
     }
   </style>
 </head>
 <body>
   <h1>Smart Home Control Panel</h1>
-  <p>Welcome to the Smart Home Control Panel. Here you can view your current setup and get optimization recommendations.</p>
+  <p>Welcome to the Smart Home Control Panel. Monitor and optimize your energy usage while keeping your home comfortable.</p>
 
   <h3>Current Appliance States</h3>
   <table>
@@ -52,12 +120,16 @@
     </tbody>
   </table>
 
-  <h3 class="recommendations">Recommendations</h3>
+  <h3>Recommendations</h3>
   <button class="button" id="hvac-button">Get HVAC Recommendation</button>
   <p id="hvac-result"></p>
 
   <button class="button" id="energy-saving-button">Get Energy-Saving Recommendation</button>
   <p id="energy-saving-result"></p>
+
+  <footer>
+    &copy; 2025 Smart Home System. All rights reserved.
+  </footer>
 
   <script>
     // Fetch and display appliance states
