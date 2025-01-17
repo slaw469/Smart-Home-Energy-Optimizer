@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Smart Home Control Panel</title>
   <style>
-    /* General body styling */
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background-color: #121212;
@@ -92,6 +91,7 @@
       border-radius: 5px;
       background-color: #2c2c2c;
       color: #ffffff;
+      box-sizing: border-box;
     }
 
     footer {
@@ -109,10 +109,10 @@
   <h3>Home Details</h3>
   <form id="home-details-form">
     <label for="square-feet">Square Feet:</label>
-    <input type="number" id="square-feet" placeholder="Enter home size in sq ft">
+    <input type="number" id="square-feet" placeholder="Enter home size in sq ft" required>
 
     <label for="location">Location:</label>
-    <input type="text" id="location" placeholder="Enter your location">
+    <input type="text" id="location" placeholder="Enter your location" required>
 
     <label for="weather">Weather:</label>
     <select id="weather">
@@ -134,7 +134,7 @@
       </tr>
     </thead>
     <tbody id="appliance-table">
-      <!-- Dynamically populated appliance states -->
+      <tr><td colspan="4">Loading appliances...</td></tr>
     </tbody>
   </table>
 
@@ -150,73 +150,81 @@
   </footer>
 
   <script>
-    // Fetch appliance states from the server
-    function fetchApplianceStates() {
-      fetch('/appliance_states')
-        .then(response => response.json())
-        .then(data => {
-          const tableBody = document.getElementById('appliance-table');
-          tableBody.innerHTML = ''; // Clear existing rows
-          data.forEach(appliance => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-              <td>${appliance.name}</td>
-              <td>${appliance.state}</td>
-              <td>${appliance.room}</td>
-              <td><button class="button" onclick="toggleAppliance('${appliance.name}')">Toggle</button></td>
-            `;
-            tableBody.appendChild(row);
-          });
-        })
-        .catch(error => console.error('Error fetching appliance states:', error));
+    async function fetchApplianceStates() {
+      try {
+        const response = await fetch('/appliance_states');
+        const data = await response.json();
+        const tableBody = document.getElementById('appliance-table');
+        tableBody.innerHTML = '';
+
+        if (data.length === 0) {
+          tableBody.innerHTML = '<tr><td colspan="4">No appliances available.</td></tr>';
+          return;
+        }
+
+        data.forEach(appliance => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${appliance.name}</td>
+            <td>${appliance.state}</td>
+            <td>${appliance.room}</td>
+            <td><button class="button" onclick="toggleAppliance('${appliance.name}')">Toggle</button></td>
+          `;
+          tableBody.appendChild(row);
+        });
+      } catch (error) {
+        console.error('Error fetching appliance states:', error);
+      }
     }
 
-    // Toggle an appliance's state
-    function toggleAppliance(name) {
-      fetch('/store_input', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, value: 'toggle' })
-      })
-      .then(response => response.json())
-      .then(data => {
-        alert(data.message); // Notify the user
-        fetchApplianceStates(); // Refresh appliance states
-      })
-      .catch(error => console.error('Error toggling appliance:', error));
+    async function toggleAppliance(name) {
+      try {
+        const response = await fetch('/store_input', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, value: 'toggle' })
+        });
+        const data = await response.json();
+        alert(data.message);
+        fetchApplianceStates();
+      } catch (error) {
+        console.error('Error toggling appliance:', error);
+      }
     }
 
-    // Calculate energy usage
-    document.getElementById('calculate-energy-button').addEventListener('click', () => {
-      const squareFeet = document.getElementById('square-feet').value;
-      const location = document.getElementById('location').value;
+    document.getElementById('calculate-energy-button').addEventListener('click', async () => {
+      const squareFeet = document.getElementById('square-feet').value.trim();
+      const location = document.getElementById('location').value.trim();
       const weather = document.getElementById('weather').value;
 
-      fetch('/usage_and_saving', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ squareFeet, location, weather })
-      })
-      .then(response => response.json())
-      .then(data => {
-        document.getElementById('energy-usage-result').innerText = 
-          `Total energy usage: ${data.total_usage} kWh.`;
-      })
-      .catch(error => console.error('Error calculating energy usage:', error));
+      if (!squareFeet || !location) {
+        alert('Please fill in all fields.');
+        return;
+      }
+
+      try {
+        const response = await fetch('/usage_and_saving', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ squareFeet, location, weather })
+        });
+        const data = await response.json();
+        document.getElementById('energy-usage-result').innerText = `Total energy usage: ${data.total_usage} kWh.`;
+      } catch (error) {
+        console.error('Error calculating energy usage:', error);
+      }
     });
 
-    // Fetch recommendations
-    document.getElementById('get-recommendations-button').addEventListener('click', () => {
-      fetch('/energy_saving')
-        .then(response => response.json())
-        .then(data => {
-          document.getElementById('recommendations-result').innerText = 
-            `Recommendations: ${data.saving}`;
-        })
-        .catch(error => console.error('Error fetching recommendations:', error));
+    document.getElementById('get-recommendations-button').addEventListener('click', async () => {
+      try {
+        const response = await fetch('/energy_saving');
+        const data = await response.json();
+        document.getElementById('recommendations-result').innerText = `Recommendations: ${data.saving}`;
+      } catch (error) {
+        console.error('Error fetching recommendations:', error);
+      }
     });
 
-    // Load initial data
     window.onload = fetchApplianceStates;
   </script>
 </body>
