@@ -137,3 +137,14 @@ suggest_kwh_saving(SavingKWh) :-
     (TotalKWh > 200 ->
         SavingKWh is TotalKWh * 0.2; % Assume 20% saving potential
         SavingKWh is 0).
+
+:- dynamic appliance/5.
+
+% Appliance states: appliance(Name, State, EnergyUsage, Essential, Room).
+appliance(tv, off, 150, no, living_room).
+appliance(fridge, on, 200, yes, kitchen).
+appliance(light, on, 50, no, bedroom).
+appliance(oven, off, 1000, no, kitchen).
+appliance(heater, off, 1500, no, bathroom).
+appliance(washing_machine, off, 500, no, laundry_room).
+appliance(computer, on, 300, no, office).
