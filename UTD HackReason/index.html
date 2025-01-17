@@ -33,7 +33,6 @@
       line-height: 1.5;
     }
 
-    /* Table styling */
     table {
       width: 100%;
       margin-top: 20px;
@@ -65,11 +64,10 @@
       background-color: #252525;
     }
 
-    /* Buttons */
     .button {
       display: inline-block;
       padding: 10px 20px;
-      margin-top: 10px;
+      margin: 10px 0;
       font-size: 1rem;
       font-weight: 600;
       color: #ffffff;
@@ -85,15 +83,17 @@
       border-color: #777;
     }
 
-    /* Recommendation result paragraphs */
-    #hvac-result, #energy-saving-result {
-      margin-top: 10px;
-      color: #a0a0a0;
-      font-size: 1rem;
-      font-style: italic;
+    input, select {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      margin-bottom: 15px;
+      border: none;
+      border-radius: 5px;
+      background-color: #2c2c2c;
+      color: #ffffff;
     }
 
-    /* Footer */
     footer {
       margin-top: 40px;
       color: #808080;
@@ -104,7 +104,24 @@
 </head>
 <body>
   <h1>Smart Home Control Panel</h1>
-  <p>Welcome to the Smart Home Control Panel. Monitor and optimize your energy usage while keeping your home comfortable.</p>
+  <p>Monitor your appliances, calculate energy usage, and get recommendations to save energy.</p>
+
+  <h3>Home Details</h3>
+  <form id="home-details-form">
+    <label for="square-feet">Square Feet:</label>
+    <input type="number" id="square-feet" placeholder="Enter home size in sq ft">
+
+    <label for="location">Location:</label>
+    <input type="text" id="location" placeholder="Enter your location">
+
+    <label for="weather">Weather:</label>
+    <select id="weather">
+      <option value="summer">Summer</option>
+      <option value="winter">Winter</option>
+      <option value="spring">Spring</option>
+      <option value="fall">Fall</option>
+    </select>
+  </form>
 
   <h3>Current Appliance States</h3>
   <table>
@@ -113,72 +130,93 @@
         <th>Appliance</th>
         <th>State</th>
         <th>Room</th>
+        <th>Toggle</th>
       </tr>
     </thead>
     <tbody id="appliance-table">
-      <!-- Appliance states will be inserted dynamically here -->
+      <!-- Dynamically populated appliance states -->
     </tbody>
   </table>
 
-  <h3>Recommendations</h3>
-  <button class="button" id="hvac-button">Get HVAC Recommendation</button>
-  <p id="hvac-result"></p>
+  <button class="button" id="calculate-energy-button">Calculate Energy Usage</button>
+  <p id="energy-usage-result"></p>
 
-  <button class="button" id="energy-saving-button">Get Energy-Saving Recommendation</button>
-  <p id="energy-saving-result"></p>
+  <h3>Recommendations</h3>
+  <button class="button" id="get-recommendations-button">Get Recommendations</button>
+  <p id="recommendations-result"></p>
 
   <footer>
     &copy; 2025 Smart Home System. All rights reserved.
   </footer>
 
   <script>
-    // Fetch and display appliance states
+    // Fetch appliance states from the server
     function fetchApplianceStates() {
       fetch('/appliance_states')
         .then(response => response.json())
         .then(data => {
           const tableBody = document.getElementById('appliance-table');
-          tableBody.innerHTML = ''; // Clear existing table rows
+          tableBody.innerHTML = ''; // Clear existing rows
           data.forEach(appliance => {
             const row = document.createElement('tr');
             row.innerHTML = `
               <td>${appliance.name}</td>
               <td>${appliance.state}</td>
               <td>${appliance.room}</td>
+              <td><button class="button" onclick="toggleAppliance('${appliance.name}')">Toggle</button></td>
             `;
             tableBody.appendChild(row);
           });
         })
-        .catch(error => {
-          console.error('Error fetching appliance states:', error);
-        });
+        .catch(error => console.error('Error fetching appliance states:', error));
     }
 
-    // Fetch HVAC recommendation
-    document.getElementById('hvac-button').addEventListener('click', () => {
-      fetch('/optimize_hvac')
-        .then(response => response.json())
-        .then(data => {
-          document.getElementById('hvac-result').innerText = `Recommendation: ${data.action}`;
-        })
-        .catch(error => {
-          console.error('Error fetching HVAC recommendation:', error);
-        });
+    // Toggle an appliance's state
+    function toggleAppliance(name) {
+      fetch('/store_input', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, value: 'toggle' })
+      })
+      .then(response => response.json())
+      .then(data => {
+        alert(data.message); // Notify the user
+        fetchApplianceStates(); // Refresh appliance states
+      })
+      .catch(error => console.error('Error toggling appliance:', error));
+    }
+
+    // Calculate energy usage
+    document.getElementById('calculate-energy-button').addEventListener('click', () => {
+      const squareFeet = document.getElementById('square-feet').value;
+      const location = document.getElementById('location').value;
+      const weather = document.getElementById('weather').value;
+
+      fetch('/usage_and_saving', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ squareFeet, location, weather })
+      })
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById('energy-usage-result').innerText = 
+          `Total energy usage: ${data.total_usage} kWh.`;
+      })
+      .catch(error => console.error('Error calculating energy usage:', error));
     });
 
-    // Fetch energy-saving recommendation
-    document.getElementById('energy-saving-button').addEventListener('click', () => {
+    // Fetch recommendations
+    document.getElementById('get-recommendations-button').addEventListener('click', () => {
       fetch('/energy_saving')
         .then(response => response.json())
         .then(data => {
-          document.getElementById('energy-saving-result').innerText = `Recommendation: ${data.saving}`;
+          document.getElementById('recommendations-result').innerText = 
+            `Recommendations: ${data.saving}`;
         })
-        .catch(error => {
-          console.error('Error fetching energy-saving recommendation:', error);
-        });
+        .catch(error => console.error('Error fetching recommendations:', error));
     });
 
-    // Load appliance states on page load
+    // Load initial data
     window.onload = fetchApplianceStates;
   </script>
 </body>
