@@ -220,3 +220,9 @@ build_scheduling_msg(List, Msg) :-
     format(atom(Msg),
       'Schedule these high-energy appliances to run during off-peak hours: ~w.',
       [List]).
+% ---------------------------------------------------------------------------
+% ROOM APPLIANCE USAGE
+% ---------------------------------------------------------------------------
+room_appliance_usage(Room, TotalUsage) :-
+    findall(Energy, appliance(_, on, Energy, _, Room), Energies),
+    sumlist(Energies, TotalUsage).

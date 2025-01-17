@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Home Control Panel</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      padding: 0;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #f4f4f4;
+    }
+    h1, h3 {
+      color: #333;
+    }
+    .recommendations {
+      margin-top: 30px;
+    }
+    .button {
+      margin: 5px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Smart Home Control Panel</h1>
+  <p>Welcome to the Smart Home Control Panel. Here you can view your current setup and get optimization recommendations.</p>
+
+  <h3>Current Appliance States</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Appliance</th>
+        <th>State</th>
+        <th>Room</th>
+      </tr>
+    </thead>
+    <tbody id="appliance-table">
+      <!-- Appliance states will be inserted dynamically here -->
+    </tbody>
+  </table>
+
+  <h3 class="recommendations">Recommendations</h3>
+  <button class="button" id="hvac-button">Get HVAC Recommendation</button>
+  <p id="hvac-result"></p>
+
+  <button class="button" id="energy-saving-button">Get Energy-Saving Recommendation</button>
+  <p id="energy-saving-result"></p>
+
+  <script>
+    // Fetch and display appliance states
+    function fetchApplianceStates() {
+      fetch('/appliance_states')
+        .then(response => response.json())
+        .then(data => {
+          const tableBody = document.getElementById('appliance-table');
+          tableBody.innerHTML = ''; // Clear existing table rows
+          data.forEach(appliance => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${appliance.name}</td>
+              <td>${appliance.state}</td>
+              <td>${appliance.room}</td>
+            `;
+            tableBody.appendChild(row);
+          });
+        })
+        .catch(error => {
+          console.error('Error fetching appliance states:', error);
+        });
+    }
+
+    // Fetch HVAC recommendation
+    document.getElementById('hvac-button').addEventListener('click', () => {
+      fetch('/optimize_hvac')
+        .then(response => response.json())
+        .then(data => {
+          document.getElementById('hvac-result').innerText = `Recommendation: ${data.action}`;
+        })
+        .catch(error => {
+          console.error('Error fetching HVAC recommendation:', error);
+        });
+    });
+
+    // Fetch energy-saving recommendation
+    document.getElementById('energy-saving-button').addEventListener('click', () => {
+      fetch('/energy_saving')
+        .then(response => response.json())
+        .then(data => {
+          document.getElementById('energy-saving-result').innerText = `Recommendation: ${data.saving}`;
+        })
+        .catch(error => {
+          console.error('Error fetching energy-saving recommendation:', error);
+        });
+    });
+
+    // Load appliance states on page load
+    window.onload = fetchApplianceStates;
+  </script>
+</body>
+</html>
